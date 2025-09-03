@@ -1,0 +1,74 @@
+[package]
+name = "pulsar-kepler-demo"
+version = "0.1.0"
+edition = "2025"
+authors = [""]
+description = "Real-time vulnerable process detection demo integrating Pulsar eBPF monitoring with Kepler vulnerability database"
+homepage = ""
+repository = ""
+license = "Apache-2.0"
+keywords = ["security", "vulnerability", "ebpf", "monitoring", "demo"]
+categories = ["security", "network-programming", "api-bindings"]
+readme = "README.md"
+
+[[bin]]
+name = "demo"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+tokio-tungstenite = "0.20"
+
+# HTTP client and server
+reqwest = { version = "0.11", features = ["json"] }
+axum = { version = "0.7", features = ["ws", "tokio"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["fs", "cors"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Configuration
+clap = { version = "4.0", features = ["derive"] }
+config = "0.13"
+
+# Caching and data structures
+moka = { version = "0.12", features = ["future"] }
+dashmap = "5.5"
+uuid = { version = "1.0", features = ["v4"] }
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Cross-platform process monitoring
+sysinfo = "0.33"
+
+# System process monitoring (Linux only)
+[target.'cfg(target_os = "linux")'.dependencies]
+procfs = "0.16"
+nix = { version = "0.27", features = ["process", "signal"] }
+
+# Additional utilities
+futures = "0.3"
+futures-util = "0.3"
+once_cell = "1.19"
+regex = "1.10"
+urlencoding = "2.1"
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"

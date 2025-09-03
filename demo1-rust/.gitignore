@@ -1,0 +1,35 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Runtime
+*.pid
+
+# Temporary files
+*.tmp
+*.temp
+
+# Screenshots (development)
+*.png
+!assets/*.png
+
+# Docker
+.env
+
+# Local development
+test_output/
+debug/
