@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Vulnerability Detection Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d3748 100%);
+            color: #ffffff;
+            overflow: hidden;
+        }
+        
+        .presentation {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .slide {
+            display: none;
+            padding: 60px;
+            height: 100vh;
+            overflow-y: auto;
+            animation: slideIn 0.5s ease-in-out;
+        }
+        
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+        
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: #4ecdc4;
+            border-bottom: 3px solid #4ecdc4;
+            padding-bottom: 0.5rem;
+        }
+        
+        h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #ff6b6b;
+        }
+        
+        p, li {
+            font-size: 1.3rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+        
+        ul {
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin-bottom: 0.8rem;
+        }
+        
+        .highlight {
+            background: rgba(255, 107, 107, 0.2);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        
+        .code-block {
+            background: #1a1a2e;
+            border: 1px solid #4ecdc4;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Fira Code', 'Monaco', monospace;
+            font-size: 1.1rem;
+            overflow-x: auto;
+        }
+        
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .component {
+            background: rgba(78, 205, 196, 0.1);
+            border: 2px solid #4ecdc4;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .component h4 {
+            color: #4ecdc4;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+        
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 1rem;
+            z-index: 1000;
+        }
+        
+        .nav-btn {
+            background: #4ecdc4;
+            color: #1e1e2e;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn:hover {
+            background: #ff6b6b;
+            transform: translateY(-2px);
+        }
+        
+        .nav-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 1rem;
+        }
+        
+        .demo-flow {
+            background: rgba(255, 107, 107, 0.1);
+            border-left: 4px solid #ff6b6b;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-card {
+            background: rgba(78, 205, 196, 0.15);
+            border: 1px solid #4ecdc4;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #4ecdc4;
+            display: block;
+        }
+        
+        .cve-example {
+            background: rgba(255, 107, 107, 0.15);
+            border: 1px solid #ff6b6b;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .severity-critical { color: #ff4444; font-weight: bold; }
+        .severity-high { color: #ff8800; font-weight: bold; }
+        .severity-medium { color: #ffcc00; font-weight: bold; }
+        
+        .flow-diagram {
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.1rem;
+            line-height: 2;
+            margin: 2rem 0;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2rem;
+            border-radius: 8px;
+        }
+        
+        .future-note {
+            background: rgba(255, 204, 0, 0.1);
+            border: 2px solid #ffcc00;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            color: #ffcc00;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation">
+        <div class="slide-counter">
+            <span id="current-slide">1</span> / <span id="total-slides">8</span>
+        </div>
+        
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <h1>🛡️ Real-Time Vulnerability Detection</h1>
+            <div style="text-align: center; margin: 3rem 0;">
+                <h3>Process Monitoring + Kepler Integration</h3>
+                <p style="font-size: 1.5rem; color: #4ecdc4; margin-top: 2rem;">
+                    <strong>Rust Demo Implementation</strong><br>
+                    Cross-platform Vulnerability Correlation Engine
+                </p>
+                <div style="margin-top: 3rem; font-size: 1.2rem; color: #aaa;">
+                    <p>🔍 <strong>Process Monitor</strong>: Cross-platform process detection</p>
+                    <p>🔗 <strong>Kepler API</strong>: NIST vulnerability database integration</p>
+                    <p>🤖 <strong>AI-Assisted Development</strong>: Built to collaborate with Claude Code for enhanced development workflow</p>
+                    <p>https://github.com/hylu/exein_io_eco/tree/main/demo1-rust</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 2: Current Implementation -->
+        <div class="slide">
+            <h2>🏗️ Current Demo Architecture</h2>
+            
+            <div class="architecture-grid">
+                <div class="component">
+                    <h4>🔍 Process Monitor</h4>
+                    <p>Cross-platform monitoring</p>
+                    <p>sysinfo crate (simulation)</p>
+                    <p>Real-time process detection</p>
+                </div>
+                
+                <div class="component">
+                    <h4>🔗 Kepler Client</h4>
+                    <p>Vulnerability database API</p>
+                    <p>NIST NVD integration</p>
+                    <p>502,935+ CVE records</p>
+                </div>
+                <!--
+                <div class="component">
+                    <h4>🧠 Correlation Engine</h4>
+                    <p>Process-to-CVE mapping</p>
+                    <p>CVSS-based alerting</p>
+                    <p>LRU caching layer</p>
+                </div>
+                
+                <div class="component">
+                    <h4>🌐 Web Dashboard</h4>
+                    <p>WebSocket updates</p>
+                    <p>REST API endpoints</p>
+                    <p>Live vulnerability feed</p>
+                </div>
+                -->
+            </div>
+            
+            <div style="text-align: center; margin: 2rem 0;">
+                <img src="2025-09-04-13.23.48-exein-io-eco – READM.png" alt="Solution Architecture Data Flow" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #4ecdc4;">
+            </div>
+            
+            <div class="future-note">
+                <strong>⚠️ Note:</strong> Current implementation uses process monitoring for demonstration.
+                Future versions will integrate with real eBPF-based monitoring for Linux environments.
+            </div>
+        </div>
+        
+        <!-- Slide 4: What We've Accomplished -->
+        <div class="slide">
+            <h2>✅ Demo Accomplishments</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">🦀</span>
+                    <p><strong>Rust Implementation</strong><br>Memory-safe, high-performance</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">🔗</span>
+                    <p><strong>Kepler Integration</strong><br>Real vulnerability database</p>
+                </div>
+                <!--
+                <div class="stat-card">
+                    <span class="stat-number">🌐</span>
+                    <p><strong>Web Dashboard</strong><br>Live monitoring interface</p>
+                </div>
+                -->
+            </div>
+            
+            <h3>🎯 Key Features Implemented</h3>
+            <ul style="font-size: 1.4rem; margin: 2rem 0;">
+                <li><strong>🔍 Process Discovery</strong>: Process monitoring with version detection</li>
+                <li><strong>🔗 CVE Correlation</strong>: Real-time vulnerability lookup via Kepler API</li>
+                <!--<li><strong>⚡ High Performance</strong>: Async/await with intelligent caching (LRU + TTL)</li>
+                <li><strong>🚨 Smart Alerting</strong>: CVSS-based severity filtering and notifications</li>
+                <li><strong>📊 Live Dashboard</strong>: WebSocket-powered real-time updates</li>
+                <li><strong>🔧 Production Ready</strong>: Comprehensive logging, error handling, testing</li>-->
+            </ul>
+        </div>
+        
+        <!-- Slide 5: Technical Stack -->
+        <div class="slide">
+            <h2>🔧 Technical Implementation</h2>
+            
+            <div class="architecture-grid">
+                <div>
+                    <h3>🦀 Rust Technologies</h3>
+                    <ul>
+                        <li><strong>sysinfo</strong>: Cross-platform process monitoring</li>
+                        <li><strong>tokio</strong>: Async runtime</li>
+                        <li><strong>axum</strong>: Web server framework</li>
+                        <li><strong>reqwest</strong>: HTTP client for Kepler API</li>
+                        <!--<li><strong>moka</strong>: LRU caching</li>-->
+                        <li><strong>serde</strong>: JSON serialization</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3>🏗️ Architecture Patterns</h3>
+                    <ul>
+                        <li><strong>Event-driven</strong>: Message passing with mpsc channels</li>
+                        <li><strong>Async/await</strong>: Non-blocking I/O operations</li>
+                        <!--<li><strong>Modular design</strong>: Separate concerns</li>-->
+                        <!--<li><strong>Error handling</strong>: Result types with context</li>-->
+                        <li><strong>Configuration</strong>: CLI args + environment</li>
+                        <!--<li><strong>Testing</strong>: Unit + integration coverage</li>-->
+                    </ul>
+                </div>
+            </div>
+            <!--
+            <div class="demo-flow">
+                <h3>📊 Performance Metrics</h3>
+                <p>• <strong>Startup time:</strong> ~2-3 seconds</p>
+                <p>• <strong>Memory usage:</strong> ~15-20MB RSS</p>
+                <p>• <strong>API response time:</strong> <100ms with cache</p>
+                <p>• <strong>Process scan frequency:</strong> Configurable (default: 5 seconds)</p>
+            </div>
+            -->
+        </div>
+        
+        <!-- Slide 6: Kepler Integration -->
+        <div class="slide">
+            <h2>🔗 Kepler API Integration</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">502K+</span>
+                    <p>CVE Records</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">🗄️</span>
+                    <p>NIST NVD Data</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">⚡</span>
+                    <p>Real-time Lookups</p>
+                </div>
+            </div>
+            
+            <h3>🔍 Vulnerability Lookup Flow</h3>
+            <div class="code-block">
+POST /cve/search
+{
+  "product": "nginx",
+  "version": "1.18.0"
+}<br>
+                <br>
+Response: 3 CVEs found<br>
+- CVE-2021-23017: CVSS 9.8 (CRITICAL)<br>
+- CVE-2019-9511: CVSS 7.5 (HIGH)<br>
+- CVE-2019-20372: CVSS 5.3 (MEDIUM)<br>
+            </div>
+            
+            <!--<p><strong>Smart Caching:</strong> LRU cache with configurable TTL reduces API calls and improves response time</p>-->
+        </div>
+        
+        <!-- Slide 7: Live Demo -->
+        <div class="slide">
+            <h2>🚀 Live Demo</h2>
+<!--
+            <div style="text-align: center; margin: 2rem 0;">
+                <video controls style="max-width: 90%; height: auto; border-radius: 8px; border: 1px solid #4ecdc4;">
+                    <source src="2025-09-04-11.03.52-hylu@Hsinyi~Syncexein-io-ecodemo1-rust.mov" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+-->
+            <div class="demo-flow">
+                <h3>Demo Setup</h3>
+                <div class="code-block">
+# Terminal 1: Start Kepler API<br>
+cd kepler<br>
+export CONTAINER_SOCKET=/var/run/docker.sock<br>
+docker compose up -d<br>
+                    <br>
+# Terminal 2: Start Demo<br>
+cd demo1-rust<br>
+RUST_LOG=info cargo run<br>
+                </div>
+            </div>
+            
+            <div class="demo-flow">
+                <h3>Live Monitoring</h3>
+                <div class="code-block">
+# Open dashboard
+open http://localhost:3000<br>
+                    <br>
+# Trigger process detection<br>
+                    python<br><br><!--
+brew install nginx<br>
+brew services start nginx<br>
+                    <br>-->
+# Watch real-time correlation<br>
+tail -f logs<br>
+                </div>
+<!--
+                <div style="text-align: center; margin: 2rem 0;">
+                    <video controls style="max-width: 90%; height: auto; border-radius: 8px; border: 1px solid #4ecdc4;">
+                        <source src="2025-09-04-11.03.52-hylu@Hsinyi~Syncexein-io-ecodemo1-rust.mov" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+-->
+            </div>
+        </div>
+        <div class="slide">
+            <h2>🚀 Live Demo</h2>
+            <div style="text-align: center; margin: 2rem 0;">
+                <video id="demoVideo" controls style="max-width: 90%; height: auto; border-radius: 8px; border: 1px solid #4ecdc4;">
+                    <source src="2025-09-04-11.03.52-hylu@Hsinyi~Syncexein-io-ecodemo1-rust.mov" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <script>
+                    const video = document.getElementById('demoVideo');
+                    // Wait until metadata is loaded before changing playbackRate
+                    video.addEventListener('loadedmetadata', () => {
+                        video.playbackRate = 1.75; // set default speed (e.g., 1.5x)
+                    });
+                </script>
+            </div>
+        </div>
+        <!-- Slide 8: Expected Results -->
+        <div class="slide">
+            <h2>📈 Expected Demo Results</h2>
+            
+            <h3>🔍 Process Detection</h3>
+            <div class="code-block">
+📍 Found monitored process: nginx v1.18.0 (PID: 1234)<br>
+🔍 Checking vulnerabilities for nginx v1.18.0...<br>
+✅ Found 3 CVEs via Kepler API<br>
+            </div>
+            
+            <h3>🚨 Vulnerability Alerts</h3>
+            <div class="code-block">
+🚨 HIGH SEVERITY VULNERABILITY ALERT 🚨<br>
+Process: nginx v1.18.0 (PID: 1234)<br>
+High-severity vulnerabilities: 3<br>
+  • CVE-2022-41741: CVSS 7.8 (HIGH)<br>
+  • CVE-2022-41742: CVSS 7.1 (HIGH)<br>
+  • CVE-2023-44487: CVSS 7.5 (HIGH)<br>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📈 Expected Demo Results</h2>
+            <div style="text-align: center; margin: 2rem 0;">
+                <img src="2025-09-04-13.47.34-docker-compose up.png" alt="nginx CVE" style="max-width: 100%; height: 1080px; border-radius: 8px; border: 1px solid #4ecdc4;">
+            </div>
+        </div>
+
+        <!-- Slide 9: Future Roadmap -->
+        <div class="slide">
+            <h2>🛣️ Future: eBPF Integration</h2>
+            
+            <div class="future-note">
+                <h3>🚀 Next Phase: Real eBPF Implementation</h3>
+                <p>Moving from cross-platform simulation to real Linux eBPF monitoring using <strong>Pulsar</strong></p>
+            </div>
+            
+            <h3>🔮 Enhanced Capabilities with eBPF</h3>
+            <ul>
+                <li><span class="highlight">Kernel-level Monitoring</span>: Real-time process events from kernel space</li><!--
+                <li><span class="highlight">Zero Overhead</span>: eBPF probes with minimal performance impact</li>
+                <li><span class="highlight">Complete Visibility</span>: File I/O, network connections, syscalls</li>
+                <li><span class="highlight">Security Context</span>: Process lineage, privilege escalation detection</li>-->
+            </ul>
+            <!--
+            <div class="demo-flow">
+                <h3>📋 Implementation Plan</h3>
+                <p>• <strong>Phase 1:</strong> Lima VM setup with Ubuntu 24.04 + eBPF support ✅</p>
+                <p>• <strong>Phase 2:</strong> Integrate Pulsar eBPF probes with current demo</p>
+                <p>• <strong>Phase 3:</strong> Enhanced threat detection rules and correlation</p>
+                <p>• <strong>Phase 4:</strong> Production deployment with container orchestration</p>
+            </div>
+            
+            <div class="code-block">
+# Future command with real eBPF
+limactl shell pulsar-vm
+sudo ./pulsar-exec --kepler-integration
+            </div>-->
+        </div>
+    </div>
+    
+    <div class="navigation">
+        <button class="nav-btn" id="prev-btn" onclick="previousSlide()">Previous</button>
+        <button class="nav-btn" id="next-btn" onclick="nextSlide()">Next</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        document.getElementById('total-slides').textContent = totalSlides;
+        
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === index);
+            });
+            
+            document.getElementById('current-slide').textContent = index + 1;
+            document.getElementById('prev-btn').disabled = index === 0;
+            document.getElementById('next-btn').disabled = index === totalSlides - 1;
+        }
+        
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        }
+        
+        function previousSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                previousSlide();
+            }
+        });
+        
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>
