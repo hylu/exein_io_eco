@@ -33,6 +33,10 @@ pub struct Args {
     /// Run test mode
     #[arg(long)]
     pub test: bool,
+
+    /// Disable caching for demo purposes
+    #[arg(long)]
+    pub no_cache: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,6 +68,7 @@ pub struct DetectionConfig {
     pub cache_ttl: Duration,
     pub max_cache_size: u64,
     pub monitored_processes: Vec<String>,
+    pub enable_cache: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -92,6 +97,7 @@ impl From<Args> for Config {
                 min_cvss_score: args.min_cvss_score,
                 cache_ttl: Duration::from_secs(args.cache_ttl),
                 max_cache_size: 1000,
+                enable_cache: !args.no_cache,
                 monitored_processes: vec![
                     "nginx".to_string(),
                     "apache".to_string(),

@@ -42,7 +42,7 @@ async fn run_demo(config: Config) -> Result<()> {
 
     // Initialize Kepler client
     info!("📡 Initializing Kepler client...");
-    let kepler_client = Arc::new(KeplerClient::new(config.kepler.clone()));
+    let kepler_client = Arc::new(KeplerClient::new(config.kepler.clone(), config.detection.enable_cache));
 
     // Test Kepler connection
     let kepler_connected = kepler_client.test_connection().await;
@@ -129,18 +129,18 @@ async fn run_test_mode(config: Config) -> Result<()> {
 
     // Test Kepler client
     info!("Testing Kepler API connectivity...");
-    let kepler_client = Arc::new(KeplerClient::new(config.kepler.clone()));
+    let kepler_client = Arc::new(KeplerClient::new(config.kepler.clone(), config.detection.enable_cache));
     
-    match kepler_client.search_cves("nginx", "1.14.2").await {
+    match kepler_client.search_cves("nginx", "1.18.0").await {
         Ok(test_result) => {
-            info!("✅ Found {} CVEs for test query (nginx 1.14.2)", test_result.len());
+            info!("✅ Found {} CVEs for test query (nginx 1.18.0)", test_result.len());
             info!("✅ Kepler API connection successful");
         }
         Err(e) => {
             warn!("⚠️ Kepler API unavailable: {}", e);
             warn!("⚠️ Test will proceed with mock data");
             // Don't call the API again, just use known mock data count
-            info!("✅ Mock data available: 1 CVE for nginx 1.14.2");
+            info!("✅ Mock data available: 3 CVEs for nginx 1.18.0");
         }
     }
 
@@ -156,7 +156,7 @@ async fn run_test_mode(config: Config) -> Result<()> {
     let mock_process = crate::process_monitor::ProcessInfo {
         pid: 12345,
         name: "nginx".to_string(),
-        version: "1.14.2".to_string(),
+        version: "1.18.0".to_string(),
         command: "/usr/sbin/nginx -g daemon off;".to_string(),
         executable_path: "/usr/sbin/nginx".to_string(),
         start_time: chrono::Utc::now(),

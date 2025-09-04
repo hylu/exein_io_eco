@@ -86,10 +86,11 @@ pub struct KeplerClient {
     base_url: String,
     config: KeplerConfig,
     cache: Cache<String, Vec<CVE>>,
+    enable_cache: bool,
 }
 
 impl KeplerClient {
-    pub fn new(config: KeplerConfig) -> Self {
+    pub fn new(config: KeplerConfig, enable_cache: bool) -> Self {
         let client = Client::builder()
             .timeout(config.timeout)
             .build()
@@ -105,6 +106,7 @@ impl KeplerClient {
             base_url: config.base_url.clone(),
             config,
             cache,
+            enable_cache,
         }
     }
 
@@ -141,8 +143,13 @@ impl KeplerClient {
                             Ok(cves) => {
                                 info!("Found {} CVEs for {} v{}", cves.len(), product, version);
                                 
-                                // Cache the result
-                                self.cache.insert(cache_key, cves.clone()).await;
+                                // Cache the result (if caching is enabled)
+                                if self.enable_cache {
+                                    self.cache.insert(cache_key, cves.clone()).await;
+                                    debug!("✅ Cached {} CVEs for {}:{}", cves.len(), product, version);
+                                } else {
+                                    debug!("✅ Retrieved {} CVEs for {}:{} (no caching)", cves.len(), product, version);
+                                }
                                 
                                 return Ok(cves);
                             }
@@ -245,39 +252,53 @@ impl KeplerClient {
     fn get_mock_cve_data(&self, product: &str, version: &str) -> Vec<CVE> {
         match product {
             "nginx" => match version {
-                "1.14.2" => vec![
-                    CVE {
-                        cve_id: "CVE-2019-20372".to_string(),
-                        summary: "NGINX before 1.17.7, with certain error_page configurations, allows HTTP request smuggling".to_string(),
-                        published_date: "2020-01-09T21:15Z".to_string(),
-                        cvss: Some(CVSSInfo {
-                            v3: Some(CVSSv3 {
-                                base_score: 5.3,
-                                severity: "MEDIUM".to_string(),
-                            }),
-                            v2: None,
-                        }),
-                        references: vec![Reference {
-                            url: "https://nginx.org/en/security_advisories.html".to_string(),
-                            tags: vec!["Vendor Advisory".to_string()],
-                        }],
-                    }
-                ],
                 "1.18.0" => vec![
                     CVE {
-                        cve_id: "CVE-2021-23017".to_string(),
-                        summary: "A security issue in nginx resolver was identified, which might allow an attacker who is able to forge UDP packets".to_string(),
-                        published_date: "2021-05-25T13:15Z".to_string(),
+                        cve_id: "CVE-2022-41741".to_string(),
+                        summary: "NGINX Open Source before versions 1.23.2 and 1.22.1 have a vulnerability in the module ngx_http_mp4_module that might allow a local attacker to corrupt NGINX worker memory".to_string(),
+                        published_date: "2022-10-19T22:15Z".to_string(),
                         cvss: Some(CVSSInfo {
                             v3: Some(CVSSv3 {
-                                base_score: 8.1,
+                                base_score: 7.8,
                                 severity: "HIGH".to_string(),
                             }),
                             v2: None,
                         }),
                         references: vec![Reference {
-                            url: "https://nginx.org/en/security_advisories.html".to_string(),
-                            tags: vec!["Vendor Advisory".to_string()],
+                            url: "https://support.f5.com/csp/article/K81926432".to_string(),
+                            tags: vec!["Mitigation".to_string(), "Vendor Advisory".to_string()],
+                        }],
+                    },
+                    CVE {
+                        cve_id: "CVE-2022-41742".to_string(),
+                        summary: "NGINX Open Source before versions 1.23.2 and 1.22.1 have a vulnerability in the module ngx_http_mp4_module that might allow a local attacker to cause a worker process crash".to_string(),
+                        published_date: "2022-10-19T22:15Z".to_string(),
+                        cvss: Some(CVSSInfo {
+                            v3: Some(CVSSv3 {
+                                base_score: 7.1,
+                                severity: "HIGH".to_string(),
+                            }),
+                            v2: None,
+                        }),
+                        references: vec![Reference {
+                            url: "https://support.f5.com/csp/article/K28112382".to_string(),
+                            tags: vec!["Mitigation".to_string(), "Vendor Advisory".to_string()],
+                        }],
+                    },
+                    CVE {
+                        cve_id: "CVE-2023-44487".to_string(),
+                        summary: "The HTTP/2 protocol allows a denial of service (server resource consumption) because request cancellation can reset many streams quickly".to_string(),
+                        published_date: "2023-10-10T14:15Z".to_string(),
+                        cvss: Some(CVSSInfo {
+                            v3: Some(CVSSv3 {
+                                base_score: 7.5,
+                                severity: "HIGH".to_string(),
+                            }),
+                            v2: None,
+                        }),
+                        references: vec![Reference {
+                            url: "https://blog.cloudflare.com/technical-breakdown-http2-rapid-reset-ddos-attack/".to_string(),
+                            tags: vec!["Technical Description".to_string(), "Vendor Advisory".to_string()],
                         }],
                     }
                 ],
@@ -362,11 +383,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_mock_cve_data() {
-        let client = KeplerClient::new(test_config());
+        let client = KeplerClient::new(test_config(), true);
         
-        let nginx_cves = client.get_mock_cve_data("nginx", "1.14.2");
-        assert_eq!(nginx_cves.len(), 1);
-        assert_eq!(nginx_cves[0].cve_id, "CVE-2019-20372");
+        let nginx_cves = client.get_mock_cve_data("nginx", "1.18.0");
+        assert_eq!(nginx_cves.len(), 3);
+        assert_eq!(nginx_cves[0].cve_id, "CVE-2022-41741");
         
         let ssh_cves = client.get_mock_cve_data("sshd", "7.4p1");
         assert_eq!(ssh_cves.len(), 2);

@@ -65,7 +65,7 @@ docker compose build
 docker compose up -d
 
 # Verify Kepler is running
-curl -H "Content-Type: application/json" -d '{"product":"nginx","version":"1.14.2"}' http://localhost:8000/cve/search
+curl -H "Content-Type: application/json" -d '{"product":"nginx","version":"1.18.0"}' http://localhost:8000/cve/search
 
 # Import vulnerability data (required for first time)
 # Note: NIST.gov may be blocked by Cloudflare security measures

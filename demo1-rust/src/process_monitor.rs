@@ -85,26 +85,31 @@ impl ProcessMonitor {
             warn!("⚠️ Mock events disabled - no demo events will be generated");
         }
         
-        Ok(())
+        // Keep the process monitor running indefinitely
+        info!("✅ Process monitor started successfully - running indefinitely");
+        loop {
+            tokio::time::sleep(Duration::from_secs(60)).await;
+        }
     }
 
     async fn scan_existing_processes(&mut self) -> Result<()> {
         info!("🔍 Scanning existing processes for monitored services...");
         debug!("Monitoring these processes: {:?}", self.config.detection.monitored_processes);
         let mut process_count = 0;
-        let mut total_processes = 0;
         
         // Refresh system information
         self.system.refresh_all();
-        total_processes = self.system.processes().len();
+        let total_processes = self.system.processes().len();
         debug!("Found {} total running processes", total_processes);
         
         for (pid, process) in self.system.processes() {
             let process_name = process.name().to_string_lossy().to_string();
-            debug!("Checking process: {} (PID: {})", process_name, pid.as_u32());
             
-            if let Some(process_info) = self.extract_process_info(pid, process).await {
-                if self.should_monitor_process(&process_info) {
+            // Only extract detailed info for monitored processes to avoid interference
+            if self.config.should_monitor_process(&process_name) {
+                debug!("🎯 Found target process: {} (PID: {})", process_name, pid.as_u32());
+                
+                if let Some(process_info) = self.extract_process_info(pid, process).await {
                     info!("📍 Found monitored process: {} v{} (PID: {})", 
                           process_info.name, process_info.version, process_info.pid);
                     
@@ -115,8 +120,6 @@ impl ProcessMonitor {
                     
                     self.known_processes.insert(process_info.pid, process_info);
                     process_count += 1;
-                } else {
-                    debug!("⏭️ Skipping non-monitored process: {}", process_name);
                 }
             }
         }
@@ -220,7 +223,7 @@ impl ProcessMonitor {
                 ProcessInfo {
                     pid: 12345,
                     name: "nginx".to_string(),
-                    version: "1.14.2".to_string(),
+                    version: "1.18.0".to_string(),
                     command: "/usr/sbin/nginx -g daemon off;".to_string(),
                     executable_path: "/usr/sbin/nginx".to_string(),
                     start_time: Utc::now(),
@@ -323,39 +326,14 @@ impl ProcessMonitor {
     async fn extract_version(exe_path: &str, process_name: &str) -> String {
         debug!("🔍 Extracting version for {} ({})", process_name, exe_path);
         
-        // For demo purposes, use fallback versions immediately to avoid hanging
-        // In production, you'd want the version detection below
+        // For demo purposes, use fallback versions immediately to avoid system interference
         let fallback_version = Self::get_fallback_version(process_name).await;
         if fallback_version != "unknown" {
             debug!("✅ Using fallback version for {}: {}", process_name, fallback_version);
             return fallback_version;
         }
         
-        debug!("🔧 Attempting to extract version from executable: {}", exe_path);
-        
-        // Try running --version on the executable (with timeout)
-        if let Ok(output) = tokio::time::timeout(
-            Duration::from_secs(2),
-            tokio::process::Command::new(exe_path)
-                .arg("--version")
-                .output()
-        ).await {
-            if let Ok(command_output) = output {
-                if command_output.status.success() {
-                    if let Ok(version_output) = String::from_utf8(command_output.stdout) {
-                        let parsed_version = Self::parse_version_output(&version_output);
-                        if parsed_version != "unknown" {
-                            debug!("✅ Extracted version from --version: {}", parsed_version);
-                            return parsed_version;
-                        }
-                    }
-                }
-            }
-        } else {
-            debug!("⏱️ Version extraction timed out for {}", exe_path);
-        }
-        
-        debug!("❓ Could not extract version for {}, using unknown", process_name);
+        debug!("🚀 Skipping version extraction for demo safety, using 'unknown'");
         "unknown".to_string()
     }
 
@@ -384,7 +362,7 @@ impl ProcessMonitor {
     async fn get_fallback_version(process_name: &str) -> String {
         // Provide some known versions for common processes for demo purposes
         match process_name {
-            "nginx" => "1.14.2".to_string(),
+            "nginx" => "1.18.0".to_string(),
             "sshd" => "7.4p1".to_string(),
             "mysqld" => "8.0.25".to_string(),
             "apache2" | "apache" => "2.4.41".to_string(),
@@ -414,7 +392,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_fallback_version() {
-        assert_eq!(ProcessMonitor::get_fallback_version("nginx").await, "1.14.2");
+        assert_eq!(ProcessMonitor::get_fallback_version("nginx").await, "1.18.0");
         assert_eq!(ProcessMonitor::get_fallback_version("sshd").await, "7.4p1");
         assert_eq!(ProcessMonitor::get_fallback_version("unknown").await, "unknown");
     }
