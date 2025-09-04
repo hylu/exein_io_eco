@@ -1,15 +1,15 @@
-# 🛡️ Pulsar + Kepler Demo (Rust Implementation)
+# 🛡️ Real-Time Vulnerability Detection Demo (Rust Implementation)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![Security](https://img.shields.io/badge/security-vulnerability%20detection-red.svg)](https://exein.io)
 
-Real-Time Vulnerable Process Detection using **Pulsar** (eBPF runtime security monitoring) and **Kepler** (vulnerability database).
+Real-Time Vulnerable Process Detection using cross-platform process monitoring and **Kepler** vulnerability database integration.
 
-This demonstration showcases the integration of two powerful security tools:
-- **🔍 Pulsar**: eBPF-powered runtime security monitoring for Linux systems
-- **🔗 Kepler**: Vulnerability database and lookup API using NIST NVD data
-- **🦀 Demo Application**: Real-time integration built with Rust
+This demonstration showcases:
+- **🔍 Process Monitoring**: Cross-platform process detection (simulates future Pulsar eBPF integration)
+- **🔗 Kepler Integration**: Vulnerability database and lookup API using NIST NVD data
+- **🦀 Demo Application**: Real-time vulnerability correlation built with Rust
 
 ## 📋 Table of Contents
 
@@ -17,7 +17,7 @@ This demonstration showcases the integration of two powerful security tools:
 - [Features](#-features)
 - [Prerequisites](#prerequisites)
 - [Architecture](#-architecture)
-- [Live Demo](#-live-demo-instructions)
+- [Live Demo](#-step-by-step-dashboard-demo-instructions)
 - [API Documentation](#-web-dashboard)
 - [Development](#-development)
 - [Troubleshooting](#-troubleshooting)
@@ -32,6 +32,7 @@ This demonstration showcases the integration of two powerful security tools:
 - **🎭 Mock Data Support**: Works offline with realistic vulnerability data for demo purposes
 - **⚡ High Performance**: Async/await architecture with efficient LRU caching
 - **🦀 Memory Safe**: Built with Rust for zero-cost abstractions and safety
+- **🤖 AI-Assisted Development**: Built to collaborate with Claude Code for enhanced development workflow
 
 ## 🚀 Quick Start
 
@@ -139,7 +140,7 @@ Once running, access the dashboard at: **http://localhost:3000**
    - Support for product search and CVE correlation
 
 3. **🧠 Vulnerability Engine** (`vulnerability_engine.rs`)
-   - Event-driven architecture processing Pulsar-style events  
+   - Event-driven architecture processing process monitoring events  
    - CVSS-based severity calculation and alert generation
    - Statistical tracking and historical vulnerability storage
    - Comprehensive reporting with severity breakdowns
@@ -164,10 +165,10 @@ Once running, access the dashboard at: **http://localhost:3000**
 └─────────────────┘    └──────────────────┘    └─────────────────┘
                                 │                        │
                                 ▼                        │
-                       ┌─────────────────┐              │
-                       │ Kepler Client   │              │
-                       │  (HTTP + Cache) │              │
-                       └─────────────────┘              │
+                       ┌─────────────────┐               │
+                       │ Kepler Client   │               │
+                       │  (HTTP + Cache) │               │
+                       └─────────────────┘               │
                                 │                        │
                                 ▼                        ▼
                        ┌─────────────────┐    ┌─────────────────┐
@@ -204,7 +205,7 @@ The demo includes comprehensive mock vulnerability data:
 
 | **Software** | **Versions** | **CVEs** | **Severity** |
 |--------------|--------------|----------|--------------|
-| nginx        | 1.14.2, 1.18.0 | CVE-2019-20372, CVE-2021-23017 | MEDIUM, HIGH |
+| nginx        | 1.18.0 | CVE-2022-41741, CVE-2022-41742, CVE-2023-44487 | HIGH (3 CVEs) |
 | sshd         | 7.4p1        | CVE-2018-15473, CVE-2020-14145 | MEDIUM |
 | mysql        | 8.0.25       | CVE-2021-35604 | MEDIUM |
 
@@ -415,13 +416,22 @@ RUST_LOG=trace,tower_http=debug cargo run
 
 ## 📈 Roadmap & Future Enhancements
 
-- [ ] **Real Pulsar Integration**: Replace process simulation with actual eBPF probes
+### 🎯 Phase 1: Pulsar Integration (Next Priority)
+- [ ] **Real Pulsar Integration**: Replace cross-platform process simulation with actual eBPF probes
+- [ ] **Linux eBPF Monitoring**: Kernel-level process events with zero overhead
+- [ ] **Enhanced Security Context**: Process lineage, privilege escalation detection
+- [ ] **Complete Runtime Visibility**: File I/O, network connections, syscalls monitoring
+
+### 🚀 Phase 2: Advanced Features  
 - [ ] **Advanced WebSocket**: Full real-time dashboard updates
 - [ ] **Multiple Vulnerability Sources**: Support for additional CVE databases  
 - [ ] **Machine Learning**: Anomaly detection and threat scoring
 - [ ] **Container Support**: Docker/Kubernetes process monitoring
 - [ ] **Compliance Reporting**: Generate reports for security audits
 - [ ] **Alert Channels**: Email, Slack, Discord, PagerDuty notifications
+
+### 💡 Current Implementation Note
+This demo currently uses **cross-platform process monitoring** (via sysinfo crate) to simulate the future Pulsar eBPF integration. This approach allows the demo to work on macOS, Linux, and Windows while showcasing the vulnerability correlation engine that will integrate with real Pulsar eBPF probes in production.
 
 ## 🤝 Contributing
 
@@ -458,7 +468,7 @@ open http://localhost:3000
 
 ## 🎭 Step-by-Step Dashboard Demo Instructions
 
-Follow this comprehensive demo flow to showcase the Pulsar + Kepler integration:
+Follow this comprehensive demo flow to showcase the real-time vulnerability detection system:
 
 ### **PHASE 1: Setup & Initial State**
 
@@ -506,7 +516,7 @@ cargo run -- --test
 **Expected Demo Flow:**
 1. **Kepler API Test**: Shows connection attempt and fallback to mock data
 2. **Process Simulation**: Creates mock nginx process event  
-3. **Vulnerability Detection**: Finds CVE-2019-20372 (CVSS 5.3, MEDIUM)
+3. **Vulnerability Detection**: Finds 3 CVEs for nginx v1.18.0 (all HIGH severity)
 4. **Event Processing**: Shows real-time event correlation
 5. **Statistics Update**: Updates counters and severity breakdown
 
@@ -521,8 +531,8 @@ curl -s http://localhost:3000/api/stats | python3 -m json.tool
 {
     "events_processed": 1,
     "processes_scanned": 1,
-    "vulnerabilities_found": 1,
-    "high_severity_alerts": 0,
+    "vulnerabilities_found": 3,
+    "high_severity_alerts": 3,
     "unique_vulnerable_processes": 1,
     "cache_hits": 0,
     "cache_misses": 1
@@ -572,8 +582,10 @@ cargo run -- --port 8080 --min-cvss-score 5.0 --log-level debug
 
 #### **📊 Mock Data Examples**
 The demo includes realistic vulnerability data:
-- **nginx 1.14.2**: CVE-2019-20372 (CVSS 5.3, MEDIUM)
-- **nginx 1.18.0**: CVE-2021-23017 (CVSS 8.1, HIGH)  
+- **nginx 1.18.0**: 3 HIGH severity CVEs
+  - CVE-2022-41741 (CVSS 7.8, HIGH)
+  - CVE-2022-41742 (CVSS 7.1, HIGH) 
+  - CVE-2023-44487 (CVSS 7.5, HIGH)
 - **sshd 7.4p1**: 2 CVEs (MEDIUM severity)
 - **mysql 8.0.25**: CVE-2021-35604 (CVSS 4.4, MEDIUM)
 
@@ -593,4 +605,4 @@ The demo includes realistic vulnerability data:
 ✅ Cross-platform compatibility  
 ✅ Configuration flexibility
 
-**Key Message:** *"This demo showcases how Pulsar's eBPF runtime monitoring combines with Kepler's vulnerability database to create a comprehensive, real-time security solution built with Rust for maximum performance and safety."*
+**Key Message:** *"This demo showcases how cross-platform process monitoring combines with Kepler's vulnerability database to create a comprehensive, real-time security solution built with Rust for maximum performance and safety. Future versions will integrate with Pulsar's eBPF runtime monitoring for enhanced Linux security monitoring."*
