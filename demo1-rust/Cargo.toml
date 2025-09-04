@@ -1,7 +1,7 @@
 [package]
 name = "pulsar-kepler-demo"
 version = "0.1.0"
-edition = "2025"
+edition = "2024"
 authors = [""]
 description = "Real-time vulnerable process detection demo integrating Pulsar eBPF monitoring with Kepler vulnerability database"
 homepage = ""
